@@ -1,5 +1,13 @@
 import { useState } from "react"
-import type { ServiceOrder } from "../types/ServiceOrder"
+
+import type { 
+  ServiceOrder,
+  ServiceOrderStatus,
+} from "../types/ServiceOrder"
+
+import { createClient } from "../services/ClientService"
+import { createDevice } from "../services/DeviceService"
+import { createServiceOrder } from "../services/ServiceOrderService"
 
 interface NewServiceFormProps {
   onAddService: (service: ServiceOrder) => void
@@ -9,31 +17,54 @@ function NewServiceForm({ onAddService }: NewServiceFormProps) {
   const [clientName, setClientName] = useState("")
   const [deviceModel, setDeviceModel] = useState("")
   const [defect, setDefect] = useState("")
-  const [status, setStatus] = useState<"Aberto" | "Finalizado">("Aberto")
+  const [status, setStatus] = useState<ServiceOrderStatus>("open")
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+async function handleSubmit(
+  event: React.FormEvent<HTMLFormElement>
+) {
+  event.preventDefault()
 
-    if (clientName.trim() === "" || deviceModel.trim() === "" || defect.trim() === "") {
-      alert("Preencha todos os campos.")
-      return
-    }
+  if (
+    clientName.trim() === "" ||
+    deviceModel.trim() === "" ||
+    defect.trim() === ""
+  ) {
+    alert("Preencha todos os campos.")
+    return
+  }
 
-    const newService: ServiceOrder = {
-      id: Date.now(),
-      clientName,
-      deviceModel,
-      defect,
-      status,
-    }
+  try {
+    const client = await createClient(
+      clientName.trim()
+    )
+
+    const device = await createDevice(
+      deviceModel.trim(),
+      client.id
+    )
+
+    const newService = await createServiceOrder(
+      client.id,
+      device.id,
+      defect.trim(),
+      status
+    )
 
     onAddService(newService)
 
     setClientName("")
     setDeviceModel("")
     setDefect("")
-    setStatus("Aberto")
+    setStatus("open")
+  } catch (error) {
+    console.error(
+      "Erro ao cadastrar ordem de serviço:",
+      error
+    )
+
+    alert("Não foi possível cadastrar a ordem de serviço.")
   }
+}
 
   return (
     <form
@@ -89,7 +120,7 @@ function NewServiceForm({ onAddService }: NewServiceFormProps) {
         </label>
         <select
           value={status}
-          onChange={(event) => setStatus(event.target.value as "Aberto" | "Finalizado")}
+          onChange={(event) => setStatus(event.target.value as ServiceOrderStatus)}
           className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="Aberto">Aberto</option>
