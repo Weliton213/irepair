@@ -6,9 +6,11 @@ interface ServiceCardProps {
 
 function ServiceCard({ service }: ServiceCardProps) {
   const statusClass =
-    service.status === "Aberto"
+    service.status === "open"
       ? "bg-green-100 text-green-700"
-      : "bg-gray-200 text-gray-700"
+      : service.status === "in_progress"
+        ? "bg-yellow-100 text-yellow-700"
+        : "bg-gray-200 text-gray-700"
 
   return (
     <article className="bg-white rounded-2xl shadow-md border border-slate-200 p-5">
@@ -24,7 +26,7 @@ function ServiceCard({ service }: ServiceCardProps) {
         </div>
 
         <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusClass}`}>
-          {service.status}
+          {getStatusLabel(service.status)}
         </span>
       </div>
 
@@ -39,6 +41,19 @@ function ServiceCard({ service }: ServiceCardProps) {
       </div>
     </article>
   )
+}
+
+function getStatusLabel(status: ServiceOrder["status"]) {
+  switch (status) {
+    case "open":
+      return "Aberto"
+
+    case "in_progress":
+      return "Em andamento"
+
+    case "done":
+      return "Finalizado"
+  }
 }
 
 export default ServiceCard
